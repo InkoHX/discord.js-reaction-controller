@@ -1,1 +1,1 @@
-# discordjs-reaction-handler
+# discord.js-reaction-controller
