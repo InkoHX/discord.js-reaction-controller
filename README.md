@@ -16,7 +16,7 @@ npm install InkoHX/discord.js-reaction-controller
 yarn add InkoHX/discord.js-reaction-controller
 ```
 
-## Example of use
+## Example of usage
 
 ```js
 const Discord = require('discord.js')
