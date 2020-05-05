@@ -1,6 +1,6 @@
 # discord.js-reaction-controller
 
-![status](https://img.shields.io/badge/STATUS-ALPHA-red)
+![status](https://img.shields.io/badge/STATUS-WIP-red)
 
 ## Install
 
