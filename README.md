@@ -2,6 +2,20 @@
 
 ![status](https://img.shields.io/badge/STATUS-ALPHA-red)
 
+## Install
+
+### NPM
+
+```bash
+npm install InkoHX/discord.js-reaction-controller
+```
+
+### Yarn
+
+```bash
+yarn add InkoHX/discord.js-reaction-controller
+```
+
 ## Example of use
 
 ```js
