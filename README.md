@@ -21,4 +21,7 @@ client.on('message', message => {
     return controller.send(message)
   }
 })
+
+client.login()
+  .catch(console.error)
 ```
