@@ -102,6 +102,7 @@ class ReactionController {
 
     if (emoji.name === this.emojis.close) {
       this.collector.stop()
+      this.collector = null
 
       return message.reactions.removeAll()
     }
