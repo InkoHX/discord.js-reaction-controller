@@ -2,6 +2,8 @@
 
 ![status](https://img.shields.io/badge/STATUS-WIP-red)
 
+![Discord.js Reaction Controller](https://i.imgur.com/JOJJZF6.gif)
+
 ## Install
 
 ### NPM
