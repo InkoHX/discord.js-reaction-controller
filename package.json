@@ -5,10 +5,10 @@
   "repository": "https://github.com/InkoHX/discord.js-reaction-controller.git",
   "author": "InkoHX <inkohx@gmail.com>",
   "license": "MIT",
-  "dependencies": {
-    "discord.js": "^12.2.0"
-  },
   "peerDependencies": {
     "discord.js": ">=12.2.0"
+  },
+  "devDependencies": {
+    "discord.js": "^12.2.0"
   }
 }
