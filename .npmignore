@@ -1,1 +1,5 @@
-example/
+.vscode
+src
+.eslintrc.json
+yarn.lock
+tsconfig.json

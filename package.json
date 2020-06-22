@@ -5,10 +5,20 @@
   "repository": "https://github.com/InkoHX/discord.js-reaction-controller.git",
   "author": "InkoHX <inkohx@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "prepublishOnly": "tsc"
+  },
   "peerDependencies": {
     "discord.js": ">=12.2.0"
   },
   "devDependencies": {
-    "discord.js": ">=12.2.0"
+    "@inkohx/eslint-config-codestyle": "^3.0.3",
+    "@types/node": "^14.0.13",
+    "@types/ws": "^7.2.5",
+    "@typescript-eslint/eslint-plugin": "^3.3.0",
+    "@typescript-eslint/parser": "^3.3.0",
+    "discord.js": ">=12.2.0",
+    "eslint": "^7.3.0",
+    "typescript": "^3.9.5"
   }
 }
