@@ -11,12 +11,12 @@ import {
 } from 'discord.js'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RewriteReturnType<F extends (...args: any[]) => any, T> = (...args: Parameters<F>) => T
+type OverrideReturnType<F extends (...args: any[]) => any, T> = (...args: Parameters<F>) => T
 
 export type ReactionCollectorEnd = (collected: Collection<string, Message>, reason: string) => void
 export type ReactionCollectorFilter = (reaction: MessageReaction, user: User) => boolean
-export type ReactionCollectorCollect = RewriteReturnType<ReactionCollectorFilter, void>
-export type HandlerFunction = RewriteReturnType<ReactionCollectorFilter, void>
+export type ReactionCollectorCollect = OverrideReturnType<ReactionCollectorFilter, void>
+export type ReactionHandlerFunction = OverrideReturnType<ReactionCollectorCollect, void>
 
 export class ReactionController {
   public readonly client: Client
@@ -25,9 +25,9 @@ export class ReactionController {
 
   public readonly pages: Collection<number, MessageEmbed>
 
-  public readonly handlers: Collection<string, HandlerFunction>
+  public readonly handlers: Collection<string, ReactionHandlerFunction>
 
-  #currentPageNumber = 1
+  #currentPageNumber = 0
 
   #collector: ReactionCollector | null = null
 
@@ -38,7 +38,7 @@ export class ReactionController {
 
     this.pages = new Collection<number, MessageEmbed>()
 
-    this.handlers = new Collection<string, HandlerFunction>()
+    this.handlers = new Collection<string, ReactionHandlerFunction>()
 
     this._initReactionHandlers()
   }
@@ -66,7 +66,7 @@ export class ReactionController {
     return Promise.all([...this.handlers.keys()].map(emoji => this.#collector?.message?.react(emoji)))
   }
 
-  public addReactionHandler (emoji: EmojiResolvable, handler: ReactionCollectorCollect): this {
+  public addReactionHandler (emoji: EmojiResolvable, handler: ReactionHandlerFunction): this {
     const emojiIdentifier = this.client.emojis.resolveIdentifier(emoji)
 
     if (!emojiIdentifier) throw new Error('It couldn\'t be an emoji identifier.')
@@ -77,13 +77,13 @@ export class ReactionController {
   }
 
   public addPage (embed: MessageEmbed): this {
-    this.pages.set(this.pages.size + 1, embed)
+    this.pages.set(this.pages.size, embed)
 
     return this
   }
 
   public addPages (embeds: MessageEmbed[]): this {
-    embeds.forEach(embed => this.pages.set(this.pages.size + 1, embed))
+    embeds.forEach(embed => this.pages.set(this.pages.size, embed))
 
     return this
   }
@@ -91,36 +91,34 @@ export class ReactionController {
   private _initReactionHandlers (): void {
     this
       .addReactionHandler('◀️', (reaction, user) => {
-        if (this.#currentPageNumber <= 1) {
+        const pageNumber = this.#currentPageNumber - 1
+        const embed = this.pages.get(pageNumber)
+
+        if (!embed) {
           reaction.users.remove(user)
             .catch(console.error)
 
           return
         }
 
-        this.#currentPageNumber -= 1
-
-        const embed = this.pages.get(this.#currentPageNumber)
-
-        if (!embed) throw new Error(`PAGE_NUMBER(${this.#currentPageNumber}): Not found page.`)
+        this.#currentPageNumber = pageNumber
 
         reaction.message.edit(embed)
           .then(() => reaction.users.remove(user))
           .catch(console.error)
       })
       .addReactionHandler('▶️', (reaction, user) => {
-        if (this.#currentPageNumber >= this.pages.size) {
+        const pageNumber = this.#currentPageNumber + 1
+        const embed = this.pages.get(pageNumber)
+
+        if (!embed) {
           reaction.users.remove(user)
             .catch(console.error)
 
           return
         }
 
-        this.#currentPageNumber += 1
-
-        const embed = this.pages.get(this.#currentPageNumber)
-
-        if (!embed) throw new Error(`PAGE_NUMBER(${this.#currentPageNumber}): Not found page.`)
+        this.#currentPageNumber = pageNumber
 
         reaction.message.edit(embed)
           .then(() => reaction.users.remove(user))
