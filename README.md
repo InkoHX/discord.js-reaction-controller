@@ -9,32 +9,45 @@
 ### NPM
 
 ```bash
-npm install InkoHX/discord.js-reaction-controller
+npm install discord.js-reaction-controller
 ```
 
 ### Yarn
 
 ```bash
-yarn add InkoHX/discord.js-reaction-controller
+yarn add discord.js-reaction-controller
 ```
 
 ## Example of usage
 
 ```js
 const Discord = require('discord.js')
-const ReactionController = require('discord.js-reaction-controller')
+const { ReactionController } = require('discord.js-reaction-controller')
 
 const client = new Discord.Client()
 
 client.on('message', message => {
-  if (message.system || message.author.bot) return
+  if (message.content.startsWith('>pagination')) {
+    const controller = new ReactionController(client)
 
-  if (message.content === '!help') {
-    const controller = new ReactionController({ /** ReactionCollectorOptions */ })
-      .addPage(new Discord.MessageEmbed().setTitle('ping').setDescription('pong'))
-      .addPage(new Discord.MessageEmbed().setTitle('help').setDescription('command list'))
+    controller
+      .addReactionHandler('🧶', (reaction, user) => {
+        reaction.message.channel.send('Package Manager???')
+          .then(() => reaction.users.remove(user))
+          .catch(console.error)
+      })
 
-    return controller.send(message)
+    controller
+      .addPages([
+        new Discord.MessageEmbed().setImage('https://github.com/yyx990803.png'),
+        new Discord.MessageEmbed().setImage('https://github.com/egoist.png'),
+        new Discord.MessageEmbed().setImage('https://github.com/vercel.png'),
+        new Discord.MessageEmbed().setImage('https://github.com/Google.png'),
+        new Discord.MessageEmbed().setImage('https://github.com/Microsoft.png')
+      ])
+
+    controller.send(message)
+      .catch(console.error)
   }
 })
 
