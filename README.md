@@ -6,6 +6,10 @@
 
 ## Install
 
+### Requirements
+
+- Discord.js v12.2.0 or later
+
 ### NPM
 
 ```bash
@@ -31,8 +35,8 @@ client.on('message', message => {
     const controller = new ReactionController(client)
 
     controller
-      .addReactionHandler('🧶', (reaction, user) => {
-        reaction.message.channel.send('Package Manager???')
+      .addReactionHandler('🤔', (reaction, user) => {
+        reaction.message.channel.send('thinking')
           .then(() => reaction.users.remove(user))
           .catch(console.error)
       })
