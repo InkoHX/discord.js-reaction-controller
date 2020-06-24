@@ -33,7 +33,7 @@ client.on('message', message => {
     const controller = new ReactionController(client)
 
     controller
-      .addReactionHandler('🤔', (reaction, user) => {
+      .addReactionHandler('🤔', (reaction) => {
         reaction.message.channel.send('thinking')
           .catch(console.error)
       })
