@@ -52,8 +52,14 @@ export class ReactionController {
     const collect: ReactionCollectorCollect = (reaction, user) => {
       const handler = this.handlers.get(reaction.emoji.identifier)
 
-      if (handler) return handler(reaction, user)
-      else throw new Error('Reaction Handler not found.')
+      if (handler) {
+        reaction.users.remove(user)
+          .catch(console.error)
+
+        return handler(reaction, user)
+      }
+
+      throw new Error('Reaction Handler not found.')
     }
 
     const end: ReactionCollectorEnd = () => message.reactions.removeAll()
