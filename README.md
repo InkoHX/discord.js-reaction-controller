@@ -1,5 +1,7 @@
 # discord.js-reaction-controller
 
+[![Scrapbox](https://img.shields.io/badge/Scrapbox-docs-green)](https://scrapbox.io/discordjs-japan/リアクションを使って簡単にページネーションを作成するDiscord.js専用のパッケージ)
+
 ![Discord.js Reaction Controller](https://i.imgur.com/JOJJZF6.gif)
 
 ## Install
