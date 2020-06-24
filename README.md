@@ -35,7 +35,6 @@ client.on('message', message => {
     controller
       .addReactionHandler('🤔', (reaction, user) => {
         reaction.message.channel.send('thinking')
-          .then(() => reaction.users.remove(user))
           .catch(console.error)
       })
 
