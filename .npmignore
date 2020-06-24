@@ -1,5 +1,5 @@
 .vscode
+.github
 src
-.eslintrc.json
 yarn.lock
 tsconfig.json
