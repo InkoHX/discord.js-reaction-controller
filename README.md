@@ -49,7 +49,7 @@ client.on('message', message => {
         new Discord.MessageEmbed().setImage('https://github.com/Microsoft.png')
       ])
 
-    controller.send(message)
+    controller.sendTo(message.channel, message.author)
       .catch(console.error)
   }
 })
