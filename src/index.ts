@@ -2,13 +2,17 @@ import {
   Client,
   Collection,
   EmojiResolvable,
+  GuildMember,
   Message,
   MessageEmbed,
   MessageReaction,
   ReactionCollector,
   ReactionCollectorOptions,
+  TextBasedChannelFields,
   User
 } from 'discord.js'
+
+import { CollectorError, PageNotFoundError } from './error'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OverrideReturnType<F extends (...args: any[]) => any, T> = (...args: Parameters<F>) => T
@@ -27,9 +31,9 @@ export class ReactionController {
 
   public readonly handlers: Collection<string, ReactionHandlerFunction>
 
-  #currentPageNumber = 0
+  private _currentPageNumber = 0
 
-  #collector: ReactionCollector | null = null
+  private _collector: ReactionCollector | null = null
 
   public constructor (client: Client, options?: ReactionCollectorOptions) {
     this.client = client
@@ -43,13 +47,57 @@ export class ReactionController {
     this._initReactionHandlers()
   }
 
-  public async send (message: Message): Promise<Array<MessageReaction | undefined>> {
-    const filter: ReactionCollectorFilter = (reaction, user) => this.handlers.has(reaction.emoji.identifier) && user.id === message.author.id
+  public get currentPage (): number {
+    return this._currentPageNumber
+  }
+
+  public async nextPage (): Promise<number> {
+    const pageNumber = this._currentPageNumber + 1
+    const page = this.pages.get(pageNumber)
+
+    if (!this._collector) throw new CollectorError('Use the "sendTo" method, please register the Collector.')
+    if (!page) throw new PageNotFoundError(pageNumber)
+
+    await this._collector.message.edit(page)
+    this._currentPageNumber = pageNumber
+    
+    return pageNumber
+  }
+
+  public async prevPage (): Promise<number> {
+    const pageNumber = this._currentPageNumber - 1
+    const page = this.pages.get(pageNumber)
+
+    if (!this._collector) throw new CollectorError('Use the "sendTo" method, please register the Collector.')
+    if (!page) throw new PageNotFoundError(pageNumber)
+
+    await this._collector.message.edit(page)
+    this._currentPageNumber = pageNumber
+    
+    return pageNumber
+  }
+
+  public async sendTo (channel: TextBasedChannelFields): Promise<MessageReaction[]>
+
+  public async sendTo (channel: TextBasedChannelFields, sender?: Array<User | GuildMember>) : Promise<MessageReaction[]>
+
+  public async sendTo (channel: TextBasedChannelFields, sender?: User | GuildMember): Promise<MessageReaction[]>
+
+  public async sendTo (channel: TextBasedChannelFields, sender?: User | GuildMember | Array<User | GuildMember>): Promise<MessageReaction[]> {
     const firstPage = this.pages.first()
 
     if (!firstPage) throw new Error('At least one page must be added using the "addPage" method.')
 
-    const collect: ReactionCollectorCollect = (reaction, user) => {
+    const collectorFilter: ReactionCollectorFilter = (reaction, user) => {
+      if (!this.handlers.has(reaction.emoji.identifier)) return false
+      if (Array.isArray(sender)) return sender
+        .map(sender => sender.id)
+        .includes(user.id)
+      else if (sender) return user.id === sender.id
+      else return true
+    }
+
+    const onCollect: ReactionCollectorCollect = (reaction, user) => {
       const handler = this.handlers.get(reaction.emoji.identifier)
 
       if (handler) {
@@ -62,14 +110,16 @@ export class ReactionController {
       throw new Error('Reaction Handler not found.')
     }
 
-    const end: ReactionCollectorEnd = () => message.reactions.removeAll()
+    const onEnd: ReactionCollectorEnd = () => this._collector?.message.reactions.removeAll().catch(console.error)
 
-    this.#collector = await message.channel.send(firstPage)
-      .then(message => message.createReactionCollector(filter, this.options))
-      .then(collector => collector.on('collect', collect))
-      .then(collector => collector.on('end', end))
+    const collector = await channel.send(firstPage)
+      .then(message => message.createReactionCollector(collectorFilter, this.options))
+      .then(collector => collector.on('collect', onCollect))
+      .then(collector => collector.on('end', onEnd))
 
-    return Promise.all([...this.handlers.keys()].map(emoji => this.#collector?.message?.react(emoji)))
+    this._collector = collector
+
+    return Promise.all([...this.handlers.keys()].map(emoji => collector.message.react(emoji)))
   }
 
   public addReactionHandler (emoji: EmojiResolvable, handler: ReactionHandlerFunction): this {
@@ -97,46 +147,29 @@ export class ReactionController {
   private _initReactionHandlers (): void {
     this
       .addReactionHandler('◀️', (reaction, user) => {
-        const pageNumber = this.#currentPageNumber - 1
-        const embed = this.pages.get(pageNumber)
-
-        if (!embed) {
-          reaction.users.remove(user)
-            .catch(console.error)
-
-          return
-        }
-
-        this.#currentPageNumber = pageNumber
-
-        reaction.message.edit(embed)
+        this.prevPage()
           .then(() => reaction.users.remove(user))
-          .catch(console.error)
+          .catch(reason => {
+            if (reason instanceof PageNotFoundError) reaction.users.remove(user).catch(console.error)
+            else console.error(reason)
+          })
       })
       .addReactionHandler('▶️', (reaction, user) => {
-        const pageNumber = this.#currentPageNumber + 1
-        const embed = this.pages.get(pageNumber)
-
-        if (!embed) {
-          reaction.users.remove(user)
-            .catch(console.error)
-
-          return
-        }
-
-        this.#currentPageNumber = pageNumber
-
-        reaction.message.edit(embed)
+        this.nextPage()
           .then(() => reaction.users.remove(user))
-          .catch(console.error)
+          .catch(reason => {
+            if (reason instanceof PageNotFoundError) reaction.users.remove(user).catch(console.error)
+            else console.error(reason)
+          })
       })
       .addReactionHandler('⏹️', (reaction) => {
-        // eslint-disable-next-line no-unused-expressions
-        this.#collector?.stop()
-        this.#collector = null
+        this._collector?.stop()
+        this._collector = null
 
         reaction.message.reactions.removeAll()
           .catch(console.error)
       })
   }
 }
+
+export * from './error'
