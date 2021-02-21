@@ -1,6 +1,6 @@
 {
   "name": "discord.js-reaction-controller",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "main": "dist/index.js",
   "repository": "https://github.com/InkoHX/discord.js-reaction-controller.git",
   "author": "InkoHX <inkohx@gmail.com>",
