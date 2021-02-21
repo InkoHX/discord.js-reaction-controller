@@ -6,11 +6,12 @@ import {
   Message,
   MessageEmbed,
   MessageReaction,
+  PartialTextBasedChannelFields,
   ReactionCollector,
   ReactionCollectorOptions,
-  TextBasedChannelFields,
-  User
+  User,
 } from 'discord.js'
+import util from 'util'
 
 import { CollectorError, PageNotFoundError } from './error'
 
@@ -45,6 +46,9 @@ export class ReactionController {
     this.handlers = new Collection<string, ReactionHandlerFunction>()
 
     this._initReactionHandlers()
+    
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    this.send = util.deprecate(this.send, 'The "send" method has been deprecated in v2.0.0. Use the "sendTo" method instead.')
   }
 
   public get currentPage (): number {
@@ -77,13 +81,20 @@ export class ReactionController {
     return pageNumber
   }
 
-  public async sendTo (channel: TextBasedChannelFields): Promise<MessageReaction[]>
+  /**
+   * @deprecated The "send" method has been deprecated in v2.0.0. Use the "sendTo" method instead.
+   */
+  public send (message: Message): Promise<MessageReaction[]> {
+    return this.sendTo(message.channel, message.author)
+  }
 
-  public async sendTo (channel: TextBasedChannelFields, sender?: Array<User | GuildMember>) : Promise<MessageReaction[]>
+  public async sendTo (channel: PartialTextBasedChannelFields): Promise<MessageReaction[]>
 
-  public async sendTo (channel: TextBasedChannelFields, sender?: User | GuildMember): Promise<MessageReaction[]>
+  public async sendTo (channel: PartialTextBasedChannelFields, sender?: Array<User | GuildMember>) : Promise<MessageReaction[]>
 
-  public async sendTo (channel: TextBasedChannelFields, sender?: User | GuildMember | Array<User | GuildMember>): Promise<MessageReaction[]> {
+  public async sendTo (channel: PartialTextBasedChannelFields, sender?: User | GuildMember): Promise<MessageReaction[]>
+
+  public async sendTo (channel: PartialTextBasedChannelFields, sender?: User | GuildMember | Array<User | GuildMember>): Promise<MessageReaction[]> {
     const firstPage = this.pages.first()
 
     if (!firstPage) throw new Error('At least one page must be added using the "addPage" method.')
