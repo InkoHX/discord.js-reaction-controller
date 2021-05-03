@@ -9,7 +9,7 @@ import {
   PartialTextBasedChannelFields,
   ReactionCollector,
   ReactionCollectorOptions,
-  User,
+  User
 } from 'discord.js'
 import util from 'util'
 
@@ -17,6 +17,8 @@ import { CollectorError, PageNotFoundError } from './error'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OverrideReturnType<F extends (...args: any[]) => any, T> = (...args: Parameters<F>) => T
+
+export type Page = MessageEmbed | (() => Promise<MessageEmbed>)
 
 export type ReactionCollectorEnd = (collected: Collection<string, Message>, reason: string) => void
 export type ReactionCollectorFilter = (reaction: MessageReaction, user: User) => boolean
@@ -28,7 +30,7 @@ export class ReactionController {
 
   public readonly options?: ReactionCollectorOptions
 
-  public readonly pages: Collection<number, MessageEmbed>
+  public readonly pages: Collection<number, Page>
 
   public readonly handlers: Collection<string, ReactionHandlerFunction>
 
@@ -41,7 +43,7 @@ export class ReactionController {
 
     this.options = options
 
-    this.pages = new Collection<number, MessageEmbed>()
+    this.pages = new Collection<number, Page>()
 
     this.handlers = new Collection<string, ReactionHandlerFunction>()
 
@@ -57,12 +59,12 @@ export class ReactionController {
 
   public async nextPage (): Promise<number> {
     const pageNumber = this._currentPageNumber + 1
-    const page = this.pages.get(pageNumber)
+    const page = await this._resolvePage(pageNumber)
 
     if (!this._collector) throw new CollectorError('Use the "sendTo" method, please register the Collector.')
-    if (!page) throw new PageNotFoundError(pageNumber)
 
     await this._collector.message.edit(page)
+
     this._currentPageNumber = pageNumber
     
     return pageNumber
@@ -70,12 +72,12 @@ export class ReactionController {
 
   public async prevPage (): Promise<number> {
     const pageNumber = this._currentPageNumber - 1
-    const page = this.pages.get(pageNumber)
+    const page = await this._resolvePage(pageNumber)
 
     if (!this._collector) throw new CollectorError('Use the "sendTo" method, please register the Collector.')
-    if (!page) throw new PageNotFoundError(pageNumber)
 
     await this._collector.message.edit(page)
+
     this._currentPageNumber = pageNumber
     
     return pageNumber
@@ -95,9 +97,9 @@ export class ReactionController {
   public async sendTo (channel: PartialTextBasedChannelFields, sender?: User | GuildMember): Promise<MessageReaction[]>
 
   public async sendTo (channel: PartialTextBasedChannelFields, sender?: User | GuildMember | Array<User | GuildMember>): Promise<MessageReaction[]> {
-    const firstPage = this.pages.first()
+    const firstPageNumber = this.pages.firstKey()
 
-    if (!firstPage) throw new Error('At least one page must be added using the "addPage" method.')
+    if (typeof firstPageNumber === 'undefined') throw new Error('At least one page must be added using the "addPage" method.')
 
     const collectorFilter: ReactionCollectorFilter = (reaction, user) => {
       if (!this.handlers.has(reaction.emoji.identifier)) return false
@@ -123,7 +125,8 @@ export class ReactionController {
 
     const onEnd: ReactionCollectorEnd = () => this._collector?.message.reactions.removeAll().catch(console.error)
 
-    const collector = await channel.send(firstPage)
+    const collector = await this._resolvePage(firstPageNumber)
+      .then(embed => channel.send(embed))
       .then(message => message.createReactionCollector(collectorFilter, this.options))
       .then(collector => collector.on('collect', onCollect))
       .then(collector => collector.on('end', onEnd))
@@ -143,16 +146,31 @@ export class ReactionController {
     return this
   }
 
-  public addPage (embed: MessageEmbed): this {
-    this.pages.set(this.pages.size, embed)
+  public addPage (page: Page): this {
+    this.pages.set(this.pages.size, page)
 
     return this
   }
 
-  public addPages (embeds: MessageEmbed[]): this {
-    embeds.forEach(embed => this.pages.set(this.pages.size, embed))
+  public addPages (pages: Page[]): this {
+    pages.forEach(page => this.pages.set(this.pages.size, page))
 
     return this
+  }
+
+  private async _resolvePage (pageNumber: number): Promise<MessageEmbed> {
+    const page = this.pages.get(pageNumber)
+
+    if (!page) throw new PageNotFoundError(pageNumber)
+    if (typeof page === 'function') {
+      const embed = await page()
+
+      this.pages.set(pageNumber, page)
+
+      return embed
+    }
+
+    return page
   }
 
   private _initReactionHandlers (): void {
