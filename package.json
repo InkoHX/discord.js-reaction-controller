@@ -16,7 +16,7 @@
     "prepublishOnly": "tsc"
   },
   "peerDependencies": {
-    "discord.js": ">=12.5.1"
+    "discord.js": ">=13.1.0"
   },
   "devDependencies": {
     "@inkohx/eslint-config-codestyle": "^3.0.3",
@@ -24,7 +24,7 @@
     "@types/ws": "^7.4.2",
     "@typescript-eslint/eslint-plugin": "^4.0.0",
     "@typescript-eslint/parser": "^3.10.1",
-    "discord.js": ">=12.5.1",
+    "discord.js": ">=13.1.0",
     "eslint": "^7.25.0",
     "typescript": "^4.2.4"
   }
