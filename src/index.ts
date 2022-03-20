@@ -63,7 +63,7 @@ export class ReactionController {
 
     if (!this._collector) throw new CollectorError('Use the "sendTo" method, please register the Collector.')
 
-    await this._collector.message.edit(page)
+    await this._collector.message.edit({ embeds: [page] })
 
     this._currentPageNumber = pageNumber
     
@@ -76,7 +76,7 @@ export class ReactionController {
 
     if (!this._collector) throw new CollectorError('Use the "sendTo" method, please register the Collector.')
 
-    await this._collector.message.edit(page)
+    await this._collector.message.edit({ embeds: [page] })
 
     this._currentPageNumber = pageNumber
     
@@ -123,11 +123,13 @@ export class ReactionController {
       throw new Error('Reaction Handler not found.')
     }
 
-    const onEnd: ReactionCollectorEnd = () => this._collector?.message.reactions.removeAll().catch(console.error)
+    const onEnd: ReactionCollectorEnd = () => {
+      this._collector?.message.reactions.removeAll().catch(console.error)
+    }
 
     const collector = await this._resolvePage(firstPageNumber)
-      .then(embed => channel.send(embed))
-      .then(message => message.createReactionCollector(collectorFilter, this.options))
+      .then(embed => channel.send({ embeds: [embed] }))
+      .then(message => message.createReactionCollector({ ...this.options, filter: collectorFilter }))
       .then(collector => collector.on('collect', onCollect))
       .then(collector => collector.on('end', onEnd))
 
