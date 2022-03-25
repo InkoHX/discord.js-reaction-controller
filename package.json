@@ -26,6 +26,6 @@
     "@typescript-eslint/parser": "^3.10.1",
     "discord.js": ">=12.5.1",
     "eslint": "^7.25.0",
-    "typescript": "^4.2.4"
+    "typescript": "^4.6.3"
   }
 }
